@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-ink: #141416;
+  --color-paper: #f3efe6;
+  --color-paper-2: #ebe5d8;
+  --color-accent: #ff4f1f;
+  --color-night: #0f0f11;
+  --color-night-2: #17171a;
+  --color-night-3: #1f1f23;
+
+  --spacing-13: 3.25rem;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-paper);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+.paper-dots {
+  background-image: radial-gradient(rgba(20, 20, 22, 0.13) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+@keyframes sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+.progress-sweep {
+  animation: sweep 1.3s ease-in-out infinite;
+}

@@ -1,0 +1,10 @@
+{
+  "description": "Helps hackathon teams find similar project repositories online and understand the tools, skills, and resources needed to get started.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
