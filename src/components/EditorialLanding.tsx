@@ -31,13 +31,22 @@ export function EditorialLanding({ onEnterStudio }: Props) {
         </div>
 
         {/* Top-Right Action to Studio */}
-        <button
-          onClick={onEnterStudio}
-          className="group flex items-center gap-2 rounded-full bg-ink px-5 py-2 font-sans text-[12.5px] font-semibold text-paper shadow-md hover:bg-night transition-all hover:shadow-lg active:scale-98"
-        >
-          <span>Enter Studio</span>
-          <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
-        </button>
+        <div className="flex items-center gap-3">
+          <a
+            href="/Morph_ts_Technical_Documentation.pdf"
+            download="Morph_ts_Technical_Documentation.pdf"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-ink/12 bg-white/60 px-3.5 py-1.5 font-mono text-[11px] text-ink/70 hover:border-ink/25 hover:text-ink transition"
+          >
+            <span>Dossier (PDF)</span>
+          </a>
+          <button
+            onClick={onEnterStudio}
+            className="group flex items-center gap-2 rounded-full bg-ink px-5 py-2 font-sans text-[12.5px] font-semibold text-paper shadow-md hover:bg-night transition-all hover:shadow-lg active:scale-98"
+          >
+            <span>Enter Studio</span>
+            <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+          </button>
+        </div>
       </header>
 
       {/* 2. Hero Section */}

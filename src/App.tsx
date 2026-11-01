@@ -505,6 +505,14 @@ export default function App() {
             </button>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <a
+              href="/Morph_ts_Technical_Documentation.pdf"
+              download="Morph_ts_Technical_Documentation.pdf"
+              className="hidden md:flex h-9 items-center gap-1.5 rounded-full border border-ink/12 bg-white/60 px-3.5 text-[11.5px] font-mono tracking-wider uppercase text-ink/70 transition hover:border-ink/25 hover:text-ink"
+              title="Download Technical Documentation & Judging Dossier (PDF)"
+            >
+              <span>Dossier (PDF)</span>
+            </a>
             <button
               onClick={() => {
                 window.location.hash = '#landing'
