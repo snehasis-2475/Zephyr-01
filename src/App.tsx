@@ -111,13 +111,19 @@ export default function App() {
   const [engine, setEngine] = useState<Engine>('triposr')
 
   // Local TripoSR Engine
-  const [triposrUrl, setTriposrUrl] = useState(() => localStorage.getItem('s2s.triposr') ?? 'http://127.0.0.1:8001')
+  const [triposrUrl, setTriposrUrl] = useState(
+    () => localStorage.getItem('s2s.triposr') ?? import.meta.env.VITE_TRIPOSR_URL ?? 'http://127.0.0.1:8001'
+  )
   const [triposrHealth, setTriposrHealth] = useState<Health>({ state: 'idle' })
   const [showConnect, setShowConnect] = useState(false)
 
   // Kaggle InstantMesh Engine
-  const [kaggleUrl, setKaggleUrl] = useState(() => localStorage.getItem('s2s.kaggle') ?? '')
-  const [kaggleToken, setKaggleToken] = useState(() => localStorage.getItem('s2s.kaggleToken') ?? '')
+  const [kaggleUrl, setKaggleUrl] = useState(
+    () => localStorage.getItem('s2s.kaggle') ?? import.meta.env.VITE_BACKEND_URL ?? ''
+  )
+  const [kaggleToken, setKaggleToken] = useState(
+    () => localStorage.getItem('s2s.kaggleToken') ?? import.meta.env.VITE_BACKEND_TOKEN ?? ''
+  )
   const [kaggleHealth, setKaggleHealth] = useState<Health>({ state: 'idle' })
   const [showKaggleConnect, setShowKaggleConnect] = useState(false)
 
