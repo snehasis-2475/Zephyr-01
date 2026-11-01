@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
-import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { Pause, Play, RotateCcw } from 'lucide-react'
 
 export type ApolloPose = 'profile' | 'fragment' | 'monolith' | 'aerial'
@@ -185,7 +185,16 @@ export function ApolloHeroViewer({ className = '' }: { className?: string }) {
     }
 
     // 6. Load Model (Scaled down to 0.58 for quiet, minimal studio proportion)
-    const setupModel = (object: THREE.Group, tex: THREE.Texture) => {
+    const setupModel = (object: THREE.Object3D, tex: THREE.Texture): boolean => {
+      let meshCount = 0
+      object.traverse((c) => {
+        if ((c as THREE.Mesh).isMesh) meshCount++
+      })
+      if (meshCount === 0) {
+        console.warn('3D model loaded with 0 meshes.')
+        return false
+      }
+
       const box = new THREE.Box3().setFromObject(object)
       const center = box.getCenter(new THREE.Vector3())
       object.position.sub(center)
@@ -212,12 +221,14 @@ export function ApolloHeroViewer({ className = '' }: { className?: string }) {
         }
       })
 
-      cachedApolloGroup = object
-      modelRef.current = object
-      scene.add(object)
-      applyMaterial(matMode, object)
+      const group = object instanceof THREE.Group ? object : new THREE.Group().add(object)
+      cachedApolloGroup = group
+      modelRef.current = group
+      scene.add(group)
+      applyMaterial(matMode, group)
       setProgress(100)
       setLoading(false)
+      return true
     }
 
     if (cachedApolloGroup) {
@@ -230,7 +241,7 @@ export function ApolloHeroViewer({ className = '' }: { className?: string }) {
       setProgress(100)
     } else {
       setLoading(true)
-      setProgress(10)
+      setProgress(15)
       setProgressText('Loading texture & geometry...')
 
       const textureLoader = new THREE.TextureLoader()
@@ -242,79 +253,66 @@ export function ApolloHeroViewer({ className = '' }: { className?: string }) {
         }
       )
 
-      const mtlLoader = new MTLLoader()
-      mtlLoader.setPath('/mc/')
-      mtlLoader.load(
-        'Meshy_AI_Fragmented_Apollo_20260816_texture.mtl',
-        (materials) => {
-          materials.preload()
-          const objLoader = new OBJLoader()
-          objLoader.setMaterials(materials)
-          objLoader.setPath('/mc/')
+      const createFallback = () => {
+        console.warn('Using procedural studio fallback.')
+        const geo = new THREE.TorusKnotGeometry(0.55, 0.18, 128, 32)
+        const mat = new THREE.MeshStandardMaterial({
+          color: '#ebe6db',
+          roughness: 0.85,
+          metalness: 0.02,
+        })
+        const mesh = new THREE.Mesh(geo, mat)
+        mesh.castShadow = true
+        mesh.receiveShadow = true
+        const grp = new THREE.Group()
+        grp.add(mesh)
+        grp.position.y = 0.1
+        cachedApolloGroup = grp
+        modelRef.current = grp
+        scene.add(grp)
+        setLoading(false)
+        setProgress(100)
+      }
 
-          const createFallback = () => {
-            const geo = new THREE.TorusKnotGeometry(0.55, 0.18, 128, 32)
-            const mat = new THREE.MeshStandardMaterial({
-              color: '#ebe6db',
-              roughness: 0.85,
-              metalness: 0.02,
-            })
-            const mesh = new THREE.Mesh(geo, mat)
-            mesh.castShadow = true
-            mesh.receiveShadow = true
-            const grp = new THREE.Group()
-            grp.add(mesh)
-            grp.position.y = 0.1
-            cachedApolloGroup = grp
-            modelRef.current = grp
-            scene.add(grp)
-            setLoading(false)
-            setProgress(100)
-          }
+      const loadGLB = () => {
+        setProgressText('Loading optimized binary mesh...')
+        const gltfLoader = new GLTFLoader()
+        gltfLoader.load(
+          '/mc/apollo.glb',
+          (gltf) => {
+            const ok = setupModel(gltf.scene, apolloTex)
+            if (!ok) createFallback()
+          },
+          undefined,
+          () => createFallback()
+        )
+      }
 
-          objLoader.load(
-            'Meshy_AI_Fragmented_Apollo_20260816_texture.obj',
-            (object) => setupModel(object, apolloTex),
-            (xhr) => {
-              if (xhr.lengthComputable && xhr.total > 0) {
-                const percent = Math.min(99, Math.round((xhr.loaded / xhr.total) * 90) + 10)
-                setProgress(percent)
-                const mb = (xhr.loaded / (1024 * 1024)).toFixed(0)
-                setProgressText(`Streaming OBJ · ${mb} MB`)
-              }
-            },
-            () => createFallback()
-          )
-        },
-        undefined,
-        () => {
-          const objLoader = new OBJLoader()
-          objLoader.load(
-            '/mc/Meshy_AI_Fragmented_Apollo_20260816_texture.obj',
-            (obj) => setupModel(obj, apolloTex),
-            undefined,
-            () => {
-              const geo = new THREE.TorusKnotGeometry(0.55, 0.18, 128, 32)
-              const mat = new THREE.MeshStandardMaterial({
-                color: '#ebe6db',
-                roughness: 0.85,
-                metalness: 0.02,
-              })
-              const mesh = new THREE.Mesh(geo, mat)
-              mesh.castShadow = true
-              mesh.receiveShadow = true
-              const grp = new THREE.Group()
-              grp.add(mesh)
-              grp.position.y = 0.1
-              cachedApolloGroup = grp
-              modelRef.current = grp
-              scene.add(grp)
-              setLoading(false)
-              setProgress(100)
+      const loadOBJ = () => {
+        setProgressText('Streaming Fragmented Apollo OBJ...')
+        const objLoader = new OBJLoader()
+        objLoader.load(
+          '/mc/Meshy_AI_Fragmented_Apollo_20260816_texture.obj',
+          (object) => {
+            const ok = setupModel(object, apolloTex)
+            if (!ok) loadGLB()
+          },
+          (xhr) => {
+            if (xhr.lengthComputable && xhr.total > 0) {
+              const percent = Math.min(99, Math.round((xhr.loaded / xhr.total) * 90) + 10)
+              setProgress(percent)
+              const mb = (xhr.loaded / (1024 * 1024)).toFixed(0)
+              setProgressText(`Streaming OBJ · ${mb} MB`)
             }
-          )
-        }
-      )
+          },
+          (err) => {
+            console.warn('OBJ load error, falling back to GLB:', err)
+            loadGLB()
+          }
+        )
+      }
+
+      loadOBJ()
     }
 
     // 7. Animation Loop
