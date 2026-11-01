@@ -54,11 +54,19 @@ export const Viewer3D = forwardRef<Viewer3DHandle, Props>(function Viewer3D({ ob
     controls.minDistance = 1
     controls.maxDistance = 12
 
-    const key = new THREE.DirectionalLight('#ffffff', 1.6)
+    const key = new THREE.DirectionalLight('#ffffff', 1.1)
     key.position.set(3, 5, 4)
     key.castShadow = true
     key.shadow.mapSize.set(1024, 1024)
-    scene.add(key, new THREE.HemisphereLight('#ffffff', '#3a3530', 0.5))
+
+    const fill = new THREE.DirectionalLight('#e6edf8', 0.5)
+    fill.position.set(-3, 2, -3)
+
+    const rim = new THREE.DirectionalLight('#ffeedd', 0.5)
+    rim.position.set(0, -2, -4)
+
+    const ambient = new THREE.AmbientLight('#ffffff', 0.4)
+    scene.add(key, fill, rim, ambient, new THREE.HemisphereLight('#ffffff', '#3a3530', 0.3))
 
     const ground = new THREE.Mesh(
       new THREE.CircleGeometry(3, 64),
@@ -142,6 +150,23 @@ export const Viewer3D = forwardRef<Viewer3DHandle, Props>(function Viewer3D({ ob
       const m = o as THREE.Mesh
       if (m.isMesh) {
         m.castShadow = true
+        m.receiveShadow = true
+
+        // Ensure materials display vertex colors vibrantly with dielectric PBR
+        const mats = Array.isArray(m.material) ? m.material : [m.material]
+        mats.forEach((mat) => {
+          if (mat instanceof THREE.MeshStandardMaterial) {
+            if (m.geometry?.getAttribute('color')) {
+              mat.vertexColors = true
+              // In PBR, metalness = 1 zeroes out diffuseColor completely.
+              // For non-metallic objects (or vertex-colored scans), use dielectric metalness:
+              if (mat.metalness >= 0.8) mat.metalness = 0.05
+              if (mat.roughness >= 0.8) mat.roughness = 0.65
+              mat.needsUpdate = true
+            }
+          }
+        })
+
         c.originals.set(m, m.material)
       }
     })

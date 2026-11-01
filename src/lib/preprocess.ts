@@ -1,6 +1,6 @@
 // Client-side sketch conditioning: normalises a drawn or uploaded sketch into a
 // clean 512x512 "black ink on white paper" image that both the local engine and
-// the Hunyuan3D backend consume.
+// the TripoSR backend consume.
 
 export interface PreprocessOptions {
   contrast: number // 0.5 – 2.5
@@ -183,16 +183,71 @@ export function preprocessSketch(src: Source, opts: PreprocessOptions): Preproce
   for (let k = 0; k < opts.strokeBoost; k++) outMask = dilate(outMask, S, S)
   let ink = 0
   for (let i = 0; i < S * S; i++) {
-    const v = outMask[i] ? 0 : 255
     ink += outMask[i]
-    od.data[i * 4] = v
-    od.data[i * 4 + 1] = v
-    od.data[i * 4 + 2] = v
+    // Smooth continuous tone: preserve antialiased subpixel ink contours without stair-step aliasing
+    const rawVal = od.data[i * 4]
+    const smoothVal = outMask[i] ? Math.min(rawVal, 40) : Math.min(255, rawVal + 30)
+    od.data[i * 4] = smoothVal
+    od.data[i * 4 + 1] = smoothVal
+    od.data[i * 4 + 2] = smoothVal
     od.data[i * 4 + 3] = 255
   }
   octx.putImageData(od, 0, 0)
 
   return { canvas: out, mask: outMask, size: S, inkRatio: ink / (S * S), inverted, empty }
+}
+
+export function preprocessImage(src: Source, opts: PreprocessOptions): PreprocessResult {
+  const { w: sw, h: sh } = sourceSize(src)
+  const S = OUTPUT_SIZE
+
+  const out = document.createElement('canvas')
+  out.width = S
+  out.height = S
+  const octx = out.getContext('2d', { willReadFrequently: true })!
+
+  // Fill canvas with pure white background (crucial for ControlNet and Zero123++)
+  octx.fillStyle = '#ffffff'
+  octx.fillRect(0, 0, S, S)
+
+  // Aspect-preserving fit into 78% of square canvas with generous white padding (>= 11% all sides)
+  // Prevents bounding box clipping / geometry slab clamping on wings, horns, and bases
+  const fillRatio = 0.78
+  const maxDim = S * fillRatio
+  const scale = maxDim / Math.max(sw, sh, 1)
+  const dw = Math.round(sw * scale)
+  const dh = Math.round(sh * scale)
+  const dx = Math.round((S - dw) / 2)
+  const dy = Math.round((S - dh) / 2)
+
+  octx.imageSmoothingEnabled = true
+  octx.imageSmoothingQuality = 'high'
+  octx.drawImage(src, 0, 0, sw, sh, dx, dy, dw, dh)
+
+  const { data } = octx.getImageData(0, 0, S, S)
+  const mask = new Uint8Array(S * S)
+  let ink = 0
+
+  for (let i = 0; i < S * S; i++) {
+    const a = data[i * 4 + 3]
+    if (a > 30) {
+      const lum = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2]
+      if (lum < 240 || a < 250) {
+        mask[i] = 1
+        ink++
+      }
+    }
+  }
+
+  const empty = ink < 20
+  return {
+    canvas: out,
+    mask,
+    size: S,
+    inkRatio: ink / (S * S),
+    inverted: false,
+    empty,
+  }
 }
 
 export function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {

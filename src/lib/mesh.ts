@@ -105,11 +105,27 @@ export async function exportGLB(root: THREE.Object3D): Promise<Blob> {
 
 export function exportOBJ(root: THREE.Object3D): Blob {
   const text = new OBJExporter().parse(root)
-  return new Blob([`# Exported by Sketch2Shape AI\n${text}`], { type: 'text/plain' })
+  return new Blob([`# Exported by Morph ts\n${text}`], { type: 'text/plain' })
 }
 
 export async function loadGLB(data: ArrayBuffer): Promise<THREE.Group> {
   const gltf = await new GLTFLoader().parseAsync(data, '')
+  gltf.scene.traverse((o) => {
+    const m = o as THREE.Mesh
+    if (m.isMesh) {
+      const mats = Array.isArray(m.material) ? m.material : [m.material]
+      mats.forEach((mat) => {
+        if (mat instanceof THREE.MeshStandardMaterial) {
+          if (m.geometry?.getAttribute('color')) {
+            mat.vertexColors = true
+            if (mat.metalness >= 0.8) mat.metalness = 0.05
+            if (mat.roughness >= 0.8) mat.roughness = 0.65
+            mat.needsUpdate = true
+          }
+        }
+      })
+    }
+  })
   return gltf.scene
 }
 
