@@ -823,6 +823,18 @@ export default function App() {
                 </div>
                 <div className="rounded-lg bg-ink/5 p-2.5 text-[11.5px] text-ink/70">
                   ⚡ <strong>Stability AI TripoSR</strong> produces high-density textured 3D assets in ~2 to 4 seconds using local NVIDIA CUDA acceleration.
+                  {!triposrOnline && (
+                    <div className="mt-2 pt-2 border-t border-ink/8 text-[11px] text-ink/65 flex flex-wrap items-center justify-between gap-1.5">
+                      <span>HTTPS browser blocking?</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowConnect(true)}
+                        className="underline font-medium text-accent hover:text-ink cursor-pointer"
+                      >
+                        Allow Insecure Content Guide (10s) →
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -1210,8 +1222,8 @@ function ConnectDialog(props: {
   const { triposrHealth } = props
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4 backdrop-blur-sm" onClick={props.onClose}>
-      <div className="w-full max-w-lg rounded-2xl border border-ink/10 bg-paper p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4 backdrop-blur-sm overflow-y-auto" onClick={props.onClose}>
+      <div className="w-full max-w-xl rounded-2xl border border-ink/10 bg-paper p-6 shadow-2xl my-8" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between">
           <div>
             <div className="font-display text-[19px] font-semibold tracking-tight">Local TripoSR Engine</div>
@@ -1241,7 +1253,7 @@ function ConnectDialog(props: {
             <button
               type="submit"
               disabled={!props.triposrUrl.trim() || triposrHealth.state === 'checking'}
-              className="flex h-11 items-center gap-2 rounded-xl bg-ink px-4 text-[13px] font-semibold text-paper disabled:opacity-40"
+              className="flex h-11 items-center gap-2 rounded-xl bg-ink px-4 text-[13px] font-semibold text-paper disabled:opacity-40 cursor-pointer"
             >
               {triposrHealth.state === 'checking' ? <LoaderCircle size={15} className="animate-spin" /> : <Plug size={15} />} Test
             </button>
@@ -1256,10 +1268,46 @@ function ConnectDialog(props: {
             </div>
           )}
           {triposrHealth.state === 'offline' && (
-            <div className="mt-4 rounded-xl border border-red-500/25 bg-red-50 p-3.5 text-[12.5px] text-red-800">
-              Could not connect to TripoSR server: {triposrHealth.error}. Ensure <code>run_triposr.bat</code> is running on port 8001.
+            <div className="mt-4 rounded-xl border border-red-500/25 bg-red-50 p-3.5 text-[12px] text-red-900 space-y-1.5">
+              <div className="font-semibold text-red-800">
+                Could not connect to TripoSR server: {triposrHealth.error}
+              </div>
+              <div className="text-red-700/80 leading-relaxed">
+                If <code>run_triposr.bat</code> is running on port 8001, your browser is blocking the connection due to HTTPS Mixed Content. Follow the 10-second setup below:
+              </div>
             </div>
           )}
+
+          {/* Viewer Guide: Allow Insecure Content */}
+          <div className="mt-4 rounded-xl border border-amber-500/25 bg-amber-500/5 p-4 text-[12.5px] text-ink/80">
+            <div className="flex items-center gap-2 font-semibold text-amber-950">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-[11px] font-bold text-amber-900">i</span>
+              <span>Allow Insecure Content in Chrome / Edge (Recommended · 10 Seconds)</span>
+            </div>
+            <p className="mt-1.5 text-[12px] text-ink/70 leading-relaxed">
+              This tells your browser to allow <code className="bg-ink/5 px-1 py-0.5 rounded text-[11px]">zephyrml.vercel.app</code> to communicate with your local port 8001:
+            </p>
+            <ol className="mt-2.5 space-y-2 pl-4 list-decimal text-[12px] text-ink/75 leading-relaxed">
+              <li>
+                While on <code className="bg-ink/5 px-1 py-0.5 rounded text-[11px] font-mono">https://zephyrml.vercel.app/#studio</code>, click the <strong>tune / settings icon</strong> (the two sliders/toggles icon right to the left of the URL in your browser address bar).
+              </li>
+              <li>
+                Click <strong>Site settings</strong>.
+              </li>
+              <li>
+                In the list of permissions, find <strong>Insecure content</strong> and change it from <em>Block (default)</em> to <strong>Allow</strong>.
+              </li>
+              <li>
+                Switch back to your <strong>Morph ts</strong> tab and refresh (<strong>F5</strong>).
+              </li>
+              <li>
+                Click <strong>Test</strong> in this Local TripoSR connection dialog — it will connect and turn green immediately.
+              </li>
+            </ol>
+            <div className="mt-3.5 pt-2.5 border-t border-ink/8 text-[11px] text-ink/55 flex items-center justify-between">
+              <span>Alternative: Switch to <strong>InstantMesh (Cloud)</strong> for zero browser configuration.</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
