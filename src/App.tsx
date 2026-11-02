@@ -130,6 +130,7 @@ export default function App() {
   )
   const [kaggleHealth, setKaggleHealth] = useState<Health>({ state: 'idle' })
   const [showKaggleConnect, setShowKaggleConnect] = useState(false)
+  const [showDisclaimer, setShowDisclaimer] = useState(true)
 
   const [genOpts, setGenOpts] = useState<GenerateOptions>(DEFAULT_GENERATE)
 
@@ -573,6 +574,44 @@ export default function App() {
         </div>
       </header>
 
+      {/* Editorial Disclaimer Banner for Hackathon Judges */}
+      {showDisclaimer && (
+        <div className="border-b border-accent/25 bg-linear-to-r from-accent/10 via-amber-500/10 to-accent/5 px-5 py-3 text-ink">
+          <div className="mx-auto flex max-w-[1600px] flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-[12.5px]">
+            <div className="flex items-start sm:items-center gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-[12px] font-bold text-white shadow-xs">
+                ★
+              </span>
+              <div>
+                <span className="font-semibold text-ink">Judges & Reviewers Notice:</span>{' '}
+                <span className="text-ink/80 leading-relaxed">
+                  <strong>InstantMesh (Cloud)</strong> is our primary recommended engine for project evaluation. Because it leverages full 6-view Zero123++ spatial diffusion and LRM NeRF reconstruction on Tesla T4 GPUs, we kindly ask judges to go through the Kaggle notebook tunnel (<code className="rounded bg-ink/6 px-1.5 py-0.5 font-mono text-[11px] text-ink">sketch2shape_api--good.ipynb</code>) to judge Morph ts at its highest architectural fidelity.
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <button
+                onClick={() => {
+                  setEngine('instantmesh')
+                  setStages(initialStages('instantmesh'))
+                  setShowKaggleConnect(true)
+                }}
+                className="flex items-center gap-1.5 rounded-full bg-ink px-3.5 py-1.5 text-[11.5px] font-semibold text-paper shadow-xs hover:bg-night transition cursor-pointer"
+              >
+                <Cloud size={13} /> Connect Kaggle Engine
+              </button>
+              <button
+                onClick={() => setShowDisclaimer(false)}
+                className="rounded-full p-1 text-ink/40 hover:bg-black/5 hover:text-ink transition cursor-pointer"
+                title="Dismiss banner"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main className="mx-auto grid max-w-[1600px] gap-6 px-5 py-6 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)] lg:px-8">
         {/* ---------------- Left: input ---------------- */}
         <section className="flex flex-col gap-5">
@@ -778,23 +817,25 @@ export default function App() {
                   setStages(initialStages('instantmesh'))
                   if (!kaggleOnline) setShowKaggleConnect(true)
                 }}
-                className={`relative flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition ${
+                className={`relative flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition cursor-pointer ${
                   engine === 'instantmesh'
-                    ? 'border-ink bg-white shadow-[0_0_0_1px_var(--color-ink)]'
+                    ? 'border-accent bg-accent/5 shadow-[0_0_0_1.5px_var(--color-accent)]'
                     : 'border-ink/10 bg-white/50 hover:border-ink/25'
                 }`}
               >
                 <div className="flex w-full items-center justify-between">
-                  <span className={`grid h-7 w-7 place-items-center rounded-md ${engine === 'instantmesh' ? 'bg-ink text-paper' : 'bg-ink/5 text-ink/60'}`}>
+                  <span className={`grid h-7 w-7 place-items-center rounded-md ${engine === 'instantmesh' ? 'bg-accent text-white' : 'bg-ink/5 text-ink/60'}`}>
                     <Cloud size={15} />
                   </span>
-                  <span className="rounded-full bg-blue-500/15 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-blue-800">
-                    Cloud T4
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-accent border border-accent/25">
+                    ★ Recommended
                   </span>
                 </div>
                 <div>
-                  <div className="text-[13.5px] font-semibold text-ink">InstantMesh</div>
-                  <div className="text-[11px] text-ink/50">{kaggleOnline ? 'Kaggle GPU & CPU' : 'Kaggle Cloud'}</div>
+                  <div className="text-[13.5px] font-semibold text-ink flex items-center gap-1.5">
+                    <span>InstantMesh</span>
+                  </div>
+                  <div className="text-[11px] text-ink/50">{kaggleOnline ? 'Kaggle GPU (Online)' : 'Primary Judging Engine'}</div>
                 </div>
               </button>
             </div>
@@ -1341,6 +1382,17 @@ function KaggleDialog(props: {
         </div>
 
         <div className="mt-4 space-y-3.5">
+          {/* Judging recommendation note */}
+          <div className="rounded-xl border border-accent/25 bg-accent/5 p-3.5 text-[12px] text-ink/85">
+            <div className="font-semibold text-accent flex items-center gap-1.5">
+              <span>★</span>
+              <span>Recommended Engine for TechZephyr 4.0 Judges</span>
+            </div>
+            <p className="mt-1 text-ink/75 leading-relaxed">
+              We kindly ask judges and evaluators to take a moment to launch this Kaggle notebook tunnel. While TripoSR provides rapid local mesh synthesis, <strong>InstantMesh demonstrates our complete multi-view diffusion (Zero123++) and LRM transformer architecture</strong> for the highest 3D fidelity and watertight geometry.
+            </p>
+          </div>
+
           <div className="rounded-xl border border-ink/10 bg-white/60 p-3.5 text-[12.5px] text-ink/75">
             <div className="flex items-center justify-between font-medium text-ink">
               <span className="flex items-center gap-1.5"><Cloud size={15} className="text-blue-500" /> Cloud T4 GPU Acceleration</span>
