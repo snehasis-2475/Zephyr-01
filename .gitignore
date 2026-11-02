@@ -21,3 +21,5 @@ logs/
 /.opencode-skills/
 triposr_outputs/
 __pycache__/
+
+cloudflared.exe

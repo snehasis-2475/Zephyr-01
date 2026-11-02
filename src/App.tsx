@@ -110,10 +110,14 @@ export default function App() {
   // Engine selection
   const [engine, setEngine] = useState<Engine>('triposr')
 
-  // Local TripoSR Engine
-  const [triposrUrl, setTriposrUrl] = useState(
-    () => localStorage.getItem('s2s.triposr') ?? import.meta.env.VITE_TRIPOSR_URL ?? 'http://127.0.0.1:8001'
-  )
+  // Local TripoSR Engine (Defaults to Cloudflare HTTPS tunnel for global zero-config access)
+  const [triposrUrl, setTriposrUrl] = useState(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('s2s.triposr') : null
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && saved?.startsWith('http://127.0.0.1')) {
+      return 'https://prominent-sent-ultimately-hints.trycloudflare.com'
+    }
+    return saved ?? import.meta.env.VITE_TRIPOSR_URL ?? 'https://prominent-sent-ultimately-hints.trycloudflare.com'
+  })
   const [triposrHealth, setTriposrHealth] = useState<Health>({ state: 'idle' })
   const [showConnect, setShowConnect] = useState(false)
 
