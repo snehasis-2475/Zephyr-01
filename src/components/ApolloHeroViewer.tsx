@@ -211,8 +211,10 @@ export function ApolloHeroViewer({ className = '' }: { className?: string }) {
         if (mesh.isMesh) {
           mesh.castShadow = true
           mesh.receiveShadow = true
+          const existingMat = mesh.material as THREE.MeshStandardMaterial
+          const existingMap = existingMat?.map
           const pbrMat = new THREE.MeshStandardMaterial({
-            map: tex,
+            map: existingMap || tex,
             roughness: 0.7,
             metalness: 0.03,
           })
@@ -242,7 +244,7 @@ export function ApolloHeroViewer({ className = '' }: { className?: string }) {
     } else {
       setLoading(true)
       setProgress(15)
-      setProgressText('Loading texture & geometry...')
+      setProgressText('Streaming Fragmented Apollo 3D...')
 
       const textureLoader = new THREE.TextureLoader()
       const apolloTex = textureLoader.load(
@@ -274,28 +276,14 @@ export function ApolloHeroViewer({ className = '' }: { className?: string }) {
         setProgress(100)
       }
 
-      const loadGLB = () => {
-        setProgressText('Loading optimized binary mesh...')
-        const gltfLoader = new GLTFLoader()
-        gltfLoader.load(
-          '/mc/apollo.glb',
-          (gltf) => {
-            const ok = setupModel(gltf.scene, apolloTex)
-            if (!ok) createFallback()
-          },
-          undefined,
-          () => createFallback()
-        )
-      }
-
       const loadOBJ = () => {
-        setProgressText('Streaming Fragmented Apollo OBJ...')
+        setProgressText('Streaming Apollo OBJ mesh...')
         const objLoader = new OBJLoader()
         objLoader.load(
           '/mc/Meshy_AI_Fragmented_Apollo_20260816_texture.obj',
           (object) => {
             const ok = setupModel(object, apolloTex)
-            if (!ok) loadGLB()
+            if (!ok) createFallback()
           },
           (xhr) => {
             if (xhr.lengthComputable && xhr.total > 0) {
@@ -306,13 +294,38 @@ export function ApolloHeroViewer({ className = '' }: { className?: string }) {
             }
           },
           (err) => {
-            console.warn('OBJ load error, falling back to GLB:', err)
-            loadGLB()
+            console.warn('OBJ load error, falling back to procedural:', err)
+            createFallback()
           }
         )
       }
 
-      loadOBJ()
+      const loadGLB = () => {
+        setProgressText('Streaming Fragmented Apollo 3D...')
+        const gltfLoader = new GLTFLoader()
+        gltfLoader.load(
+          '/mc/apollo.glb',
+          (gltf) => {
+            const ok = setupModel(gltf.scene, apolloTex)
+            if (!ok) loadOBJ()
+          },
+          (xhr) => {
+            if (xhr.lengthComputable && xhr.total > 0) {
+              const percent = Math.min(99, Math.round((xhr.loaded / xhr.total) * 90) + 10)
+              setProgress(percent)
+              const mb = (xhr.loaded / (1024 * 1024)).toFixed(0)
+              setProgressText(`Streaming 3D · ${mb} MB`)
+            }
+          },
+          (err) => {
+            console.warn('GLB load error, falling back to OBJ:', err)
+            loadOBJ()
+          }
+        )
+      }
+
+      // Stream fast binary GLB first, with OBJ and procedural fallback
+      loadGLB()
     }
 
     // 7. Animation Loop
